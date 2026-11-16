@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amazon.eg Used Tracker</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#18212b;--muted:#667085;--line:#e5e9ef;--green:#137a55;--amber:#9a6700}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif}
+header{background:#17212b;color:white;padding:22px max(18px,calc((100% - 1100px)/2))}
+h1{font-size:23px;margin:0 0 7px}.sub{color:#c7d0d9;font-size:13px}
+main{max-width:1100px;margin:22px auto;padding:0 16px}
+.toolbar,.stats,.offer{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.toolbar{padding:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:11px 15px;background:#17212b;color:white;font-weight:bold;cursor:pointer}
+button.secondary{background:#e9eef3;color:#17212b}
+.stats{margin:14px 0;padding:15px;display:flex;gap:22px;flex-wrap:wrap}
+.stat strong{font-size:21px;display:block}.stat span{font-size:12px;color:var(--muted)}
+.notice{background:#fff8e6;border:1px solid #f2dfad;color:#765400;border-radius:12px;padding:13px;margin:14px 0;font-size:13px;line-height:1.7}
+h2{font-size:17px;margin:22px 0 12px}.list{display:grid;gap:10px}
+.offer{padding:15px;display:grid;grid-template-columns:1fr auto;gap:10px}
+.offer h3{font-size:15px;margin:0 0 8px}.meta{font-size:12px;color:var(--muted);line-height:1.9}
+.price{font-size:17px;font-weight:bold;white-space:nowrap}.condition{display:inline-block;background:#e7f5ee;color:var(--green);padding:4px 8px;border-radius:20px;font-size:11px;margin-inline-start:6px}
+a{color:#145c9e;text-decoration:none;font-size:12px}.empty{text-align:center;color:var(--muted);padding:35px;background:white;border-radius:14px}
+#status{font-size:12px;color:var(--muted)}footer{font-size:11px;color:var(--muted);text-align:center;padding:25px}
+@media(max-width:560px){.offer{grid-template-columns:1fr}.price{font-size:16px}}
+</style></head>
+<body>
+<header><h1>Amazon.eg Used Tracker</h1><div class="sub">متابعة عروض المنتجات المستعملة على أمازون مصر</div></header>
+<main>
+<div class="toolbar">
+  <div><strong>لوحة متابعة العروض</strong><div id="status">جارٍ الاتصال بالخادم...</div></div>
+  <div><button onclick="refresh(true)">تحديث الآن</button> <button class="secondary" onclick="loadDemo()">تحميل أمثلة توضيحية</button></div>
+</div>
+<div class="stats">
+ <div class="stat"><strong id="count">0</strong><span>إجمالي العروض المحفوظة</span></div>
+ <div class="stat"><strong>60 ثانية</strong><span>فاصل فحص المصدر المحدد</span></div>
+ <div class="stat"><strong id="last">—</strong><span>آخر تحديث للواجهة</span></div>
+</div>
+<div class="notice"><b>حالة الربط:</b> الواجهة وقاعدة البيانات جاهزتان. لم يتم ربط مصدر عروض أمازون بعد؛ لذلك لن تظهر عروض حقيقية قبل إعداد مصدر بيانات يدعم Amazon.eg وعروض Used. الأمثلة التوضيحية ليست عروضًا حقيقية.</div>
+<h2>أحدث العروض المكتشفة</h2>
+<div id="offers" class="list"><div class="empty">لا توجد عروض محفوظة حتى الآن.</div></div>
+<footer>يتم تحديث الواجهة تلقائيًا كل 5 ثوانٍ. ظهور عروض جديدة يعتمد على مصدر البيانات المتصل وتغطية السوق.</footer>
+</main>
+<script>
+async function refresh(manual=false){
+ try{
+  const r=await fetch('/api/offers'); const items=await r.json();
+  document.getElementById('count').textContent=items.length;
+  document.getElementById('last').textContent=new Date().toLocaleTimeString('ar-EG');
+  document.getElementById('status').textContent=manual?'تم تحديث القائمة':'متصل بالخادم';
+  const box=document.getElementById('offers');
+  if(!items.length){box.innerHTML='<div class="empty">لا توجد عروض محفوظة حتى الآن. اربطي مصدر البيانات أولًا.</div>';return}
+  box.innerHTML=items.map(x=>`<article class="offer"><div><h3>${esc(x.title)}</h3><div class="meta"><span class="condition">${esc(x.condition||'Used')}</span><br>البائع: ${esc(x.seller||'غير محدد')}<br>أول ظهور: ${new Date(x.first_seen).toLocaleString('ar-EG')}</div>${x.product_url?`<a target="_blank" rel="noopener" href="${attr(x.product_url)}">فتح المنتج على أمازون</a>`:''}</div><div class="price">${x.price==null?'السعر غير متاح':Number(x.price).toLocaleString('ar-EG')+' '+esc(x.currency||'EGP')}</div></article>`).join('');
+ }catch(e){document.getElementById('status').textContent='الخادم غير متاح؛ شغّلي التطبيق أولًا'}
+}
+async function loadDemo(){await fetch('/api/demo',{method:'POST'});refresh(true)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function attr(v){return esc(v)}
+refresh();setInterval(()=>refresh(),5000);
+</script></body></html>
